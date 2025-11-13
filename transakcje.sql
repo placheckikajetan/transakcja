@@ -1,42 +1,23 @@
-CREATE TABLE ubezpiecz_wynik (
-    ID_ubezpieczenia INT PRIMARY KEY AUTO_INCREMENT,
-    ID_klienta INT NOT NULL,
-    ID_samochodu INT NOT NULL,
-    cena_bazowa_zl DECIMAL(10,2),
-    cena_po_rabatach_zl DECIMAL(10,2),
-    CONSTRAINT fk_klient FOREIGN KEY (ID_klienta) REFERENCES clients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_samochod FOREIGN KEY (ID_samochodu) REFERENCES car(id) ON DELETE CASCADE
-);
 
-INSERT INTO ubezpiecz_wynik (ID_klienta, ID_samochodu, cena_bazowa_zl, cena_po_rabatach_zl)
-SELECT 
-    c.id AS ID_klienta,
-    car.id AS ID_samochodu,
-
-    -- CENA BAZOWA wg rocznika
-    CASE 
-        WHEN car.rok BETWEEN 2000 AND 2015 THEN 2500
-        WHEN car.rok BETWEEN 1980 AND 1990 THEN 2200
-        WHEN car.rok BETWEEN 1940 AND 1979 THEN 1300
-        ELSE 3000 
-    END AS cena_bazowa_zl,
-
-    -- OSTATECZNA CENA po rabatach i dopłatach
-    (
-        CASE 
-            WHEN car.rok BETWEEN 2000 AND 2015 THEN 2500
-            WHEN car.rok BETWEEN 1980 AND 1990 THEN 2200
-            WHEN car.rok BETWEEN 1940 AND 1979 THEN 1300
-            ELSE 3000
-        END
-        *
-        (1 
-            - CASE WHEN c.country IN ('Polska','Chiny','Poland','China') THEN 0.30 ELSE 0 END
-            + CASE WHEN c.email LIKE '%apple%' THEN 0.40 ELSE 0 END
-        )
-        *
-        (1 - (0.05 * (SELECT COUNT(*) - 1 FROM car WHERE client_id = c.id)))
-    ) AS cena_po_rabatach_zl
-
-FROM car
-JOIN clients c ON car.client_id = c.id;
+select 
+row_number() over(order by cl.id,ca.id) as ID_ubezpieczenia,
+cl.id as ID_klienta,
+ca.id as ID_samochodu,
+case 
+when ca.rok>=2000 and ca.rok<=2015 then 2500
+when ca.rok between 1980 and 1999 then 2200
+when ca.rok between 1940 and 1979 then 1300
+else 3000
+end as cena_bazowa_zl,
+round(
+(case 
+when ca.rok>=2000 and ca.rok<=2015 then 2500
+when ca.rok between 1980 and 1999 then 2200
+when ca.rok between 1940 and 1979 then 1300
+else 3000
+end)
+*(1-if(cl.country in('Polska','Chiny','Poland','China'),0.3,0)+if(cl.email like '%apple%',0.4,0))
+*(1-(0.05*((select count(*) from cars where client_id=cl.id)-1)))
+,2) as cena_koncowa_zl
+from cars ca
+join clients cl on ca.client_id=cl.id;
