@@ -12,22 +12,22 @@ CREATE TABLE ubezpiecz_wynik (
 INSERT INTO ubezpiecz_wynik (ID_klienta, ID_samochodu, cena_bazowa_zl, cena_po_rabatach_zl)
 SELECT 
     c.id AS ID_klienta,
-    car.id AS ID_samochodu,
+    cars.id AS ID_samochodu,
 
     -- CENA BAZOWA wg rocznika
     CASE 
-        WHEN car.rok BETWEEN 2000 AND 2015 THEN 2500
-        WHEN car.rok BETWEEN 1980 AND 1990 THEN 2200
-        WHEN car.rok BETWEEN 1940 AND 1979 THEN 1300
+        WHEN cars.rok BETWEEN 2000 AND 2015 THEN 2500
+        WHEN cars.rok BETWEEN 1980 AND 1990 THEN 2200
+        WHEN cars.rok BETWEEN 1940 AND 1979 THEN 1300
         ELSE 3000 
     END AS cena_bazowa_zl,
 
     -- OSTATECZNA CENA po rabatach i dopłatach
     (
         CASE 
-            WHEN car.rok BETWEEN 2000 AND 2015 THEN 2500
-            WHEN car.rok BETWEEN 1980 AND 1990 THEN 2200
-            WHEN car.rok BETWEEN 1940 AND 1979 THEN 1300
+            WHEN cars.rok BETWEEN 2000 AND 2015 THEN 2500
+            WHEN cars.rok BETWEEN 1980 AND 1990 THEN 2200
+            WHEN cars.rok BETWEEN 1940 AND 1979 THEN 1300
             ELSE 3000
         END
         *
@@ -39,6 +39,6 @@ SELECT
         (1 - (0.05 * (SELECT COUNT(*) - 1 FROM car WHERE client_id = c.id)))
     ) AS cena_po_rabatach_zl
 
-FROM car
+FROM cars
 JOIN clients c ON car.client_id = c.id;
 
